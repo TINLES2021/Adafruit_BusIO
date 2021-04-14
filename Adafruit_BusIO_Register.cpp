@@ -18,67 +18,6 @@ Adafruit_BusIO_Register::Adafruit_BusIO_Register(Adafruit_I2CDevice *i2cdevice,
                                                  uint8_t byteorder,
                                                  uint8_t address_width) {
   _i2cdevice = i2cdevice;
-  _spidevice = NULL;
-  _addrwidth = address_width;
-  _address = reg_addr;
-  _byteorder = byteorder;
-  _width = width;
-}
-
-/*!
- *    @brief  Create a register we access over an SPI Device (which defines the
- * bus and CS pin)
- *    @param  spidevice The SPIDevice to use for underlying SPI access
- *    @param  reg_addr The address pointer value for the SPI register, can
- * be 8 or 16 bits
- *    @param  type     The method we use to read/write data to SPI (which is not
- * as well defined as I2C)
- *    @param  width    The width of the register data itself, defaults to 1 byte
- *    @param  byteorder The byte order of the register (used when width is > 1),
- * defaults to LSBFIRST
- *    @param  address_width The width of the register address itself, defaults
- * to 1 byte
- */
-Adafruit_BusIO_Register::Adafruit_BusIO_Register(Adafruit_SPIDevice *spidevice,
-                                                 uint16_t reg_addr,
-                                                 Adafruit_BusIO_SPIRegType type,
-                                                 uint8_t width,
-                                                 uint8_t byteorder,
-                                                 uint8_t address_width) {
-  _spidevice = spidevice;
-  _spiregtype = type;
-  _i2cdevice = NULL;
-  _addrwidth = address_width;
-  _address = reg_addr;
-  _byteorder = byteorder;
-  _width = width;
-}
-
-/*!
- *    @brief  Create a register we access over an I2C or SPI Device. This is a
- * handy function because we can pass in NULL for the unused interface, allowing
- * libraries to mass-define all the registers
- *    @param  i2cdevice The I2CDevice to use for underlying I2C access, if NULL
- * we use SPI
- *    @param  spidevice The SPIDevice to use for underlying SPI access, if NULL
- * we use I2C
- *    @param  reg_addr The address pointer value for the I2C/SMBus/SPI register,
- * can be 8 or 16 bits
- *    @param  type     The method we use to read/write data to SPI (which is not
- * as well defined as I2C)
- *    @param  width    The width of the register data itself, defaults to 1 byte
- *    @param  byteorder The byte order of the register (used when width is > 1),
- * defaults to LSBFIRST
- *    @param  address_width The width of the register address itself, defaults
- * to 1 byte
- */
-Adafruit_BusIO_Register::Adafruit_BusIO_Register(
-    Adafruit_I2CDevice *i2cdevice, Adafruit_SPIDevice *spidevice,
-    Adafruit_BusIO_SPIRegType type, uint16_t reg_addr, uint8_t width,
-    uint8_t byteorder, uint8_t address_width) {
-  _spidevice = spidevice;
-  _i2cdevice = i2cdevice;
-  _spiregtype = type;
   _addrwidth = address_width;
   _address = reg_addr;
   _byteorder = byteorder;
@@ -99,19 +38,6 @@ bool Adafruit_BusIO_Register::write(uint8_t *buffer, uint8_t len) {
 
   if (_i2cdevice) {
     return _i2cdevice->write(buffer, len, true, addrbuffer, _addrwidth);
-  }
-  if (_spidevice) {
-    if (_spiregtype == ADDRBIT8_HIGH_TOREAD) {
-      addrbuffer[0] &= ~0x80;
-    }
-    if (_spiregtype == ADDRBIT8_HIGH_TOWRITE) {
-      addrbuffer[0] |= 0x80;
-    }
-    if (_spiregtype == AD8_HIGH_TOREAD_AD7_HIGH_TOINC) {
-      addrbuffer[0] &= ~0x80;
-      addrbuffer[0] |= 0x40;
-    }
-    return _spidevice->write(buffer, len, addrbuffer, _addrwidth);
   }
   return false;
 }
@@ -188,18 +114,6 @@ bool Adafruit_BusIO_Register::read(uint8_t *buffer, uint8_t len) {
 
   if (_i2cdevice) {
     return _i2cdevice->write_then_read(addrbuffer, _addrwidth, buffer, len);
-  }
-  if (_spidevice) {
-    if (_spiregtype == ADDRBIT8_HIGH_TOREAD) {
-      addrbuffer[0] |= 0x80;
-    }
-    if (_spiregtype == ADDRBIT8_HIGH_TOWRITE) {
-      addrbuffer[0] &= ~0x80;
-    }
-    if (_spiregtype == AD8_HIGH_TOREAD_AD7_HIGH_TOINC) {
-      addrbuffer[0] |= 0x80 | 0x40;
-    }
-    return _spidevice->write_then_read(addrbuffer, _addrwidth, buffer, len);
   }
   return false;
 }
